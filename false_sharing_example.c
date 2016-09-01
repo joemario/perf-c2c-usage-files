@@ -1,0 +1,240 @@
+/*
+ * This is an example program to show false sharing between
+ * numa nodes.  
+ *
+ * It can be compiled two ways:
+ *    gcc -g false_sharing_example.c -pthread -lnuma -DNO_FALSE_SHARING -o false_sharing.exe
+ *    gcc -g false_sharing_example.c -pthread -lnuma -o no_false_sharing.exe
+ *
+ * The -DNO_FALSE_SHARING macro reduces the false sharing by expanding the shared data
+ * structure into two different cachelines, (and it runs faster).
+ *
+ * The usage is: 
+ *     ./false_sharing.exe <number of threads per node>
+ *     ./no_false_sharing.exe <number of threads per node>
+ *
+ * The program will make half the threads writer threads and half reader
+ * threads.  It will pin those threads in round-robin format to the 
+ * different numa nodes in the system.
+ *
+ * For example, on a system with 4 numa nodes:
+ * ./false_sharing.exe 2
+ * 12165 mticks, reader_thd (thread 6), on node 2 (cpu 144).
+ * 12403 mticks, reader_thd (thread 5), on node 1 (cpu 31).
+ * 12514 mticks, reader_thd (thread 4), on node 0 (cpu 96).
+ * 12703 mticks, reader_thd (thread 7), on node 3 (cpu 170).
+ * 12982 mticks, lock_th (thread 0), on node 0 (cpu 1).
+ * 13018 mticks, lock_th (thread 1), on node 1 (cpu 24).
+ * 13049 mticks, lock_th (thread 3), on node 3 (cpu 169).
+ * 13050 mticks, lock_th (thread 2), on node 2 (cpu 49).
+ * 
+ * # ./no_false_sharing.exe 2
+ * 1918 mticks, reader_thd (thread 4), on node 0 (cpu 96).
+ * 2432 mticks, reader_thd (thread 7), on node 3 (cpu 170).
+ * 2468 mticks, reader_thd (thread 6), on node 2 (cpu 146).
+ * 3903 mticks, reader_thd (thread 5), on node 1 (cpu 40).
+ * 7560 mticks, lock_th (thread 0), on node 0 (cpu 1).
+ * 7574 mticks, lock_th (thread 2), on node 2 (cpu 145).
+ * 7602 mticks, lock_th (thread 3), on node 3 (cpu 169).
+ * 7625 mticks, lock_th (thread 1), on node 1 (cpu 24).
+ *
+ */
+
+#define _MULTI_THREADED
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <sched.h>
+#include <pthread.h>
+#include <sys/types.h>
+
+/*
+ * A thread on each numa node seems to provoke cache misses
+ */
+#define 	LOOP_CNT     	(5 * 1024 * 1024) 
+
+static __inline__ uint64_t rdtsc() {
+    unsigned hi, lo;
+    __asm__ __volatile__ ( "rdtsc" : "=a"(lo), "=d"(hi));
+    return ( (uint64_t)lo) | ( ((uint64_t)hi) << 32);
+}
+
+
+/* 
+ * Create a struct where reader fields share a cacheline with the hot lock field.
+ * Compiling with -DNO_FALSE_SHARING inserts padding to avoid that sharing.
+ */
+typedef struct _buf {
+  long lock0; 
+  long lock1;
+  long reserved1;
+#if defined(NO_FALSE_SHARING)
+  long pad[5];   // to keep the 'lock*' fields on their own cacheline.
+#else
+  long pad[1];  // to provoke false sharing.
+#endif
+  long reader1; 
+  long reader2; 
+  long reader3; 
+  long reader4; 
+} buf __attribute__((aligned (64)));
+
+buf buf1;
+buf buf2;
+
+volatile int wait_to_begin = 1;
+struct thread_data *thread;
+int max_node_num;
+int num_threads; 
+char * lock_thd_name = "lock_th";
+char * reader_thd_name = "reader_thd";
+
+#define checkResults(string, val) {             \
+ if (val) {                                     \
+   printf("Failed with %d at %s", val, string); \
+   exit(1);                                     \
+ }                                              \
+}
+ 
+struct thread_data {
+    pthread_t tid;
+    long tix;
+    long node;
+    char *name;
+};
+
+/*
+ * Bind a thread to the specified numa node.
+*/
+void setAffinity(void *parm) {
+   volatile uint64_t rc, j;
+   int node        = ((struct thread_data *)parm)->node;
+   char *func_name = ((struct thread_data *)parm)->name;
+
+   numa_run_on_node(node);
+   pthread_setname_np(pthread_self(),func_name);
+}
+
+/*
+ * Thread function to simulate the false sharing.
+ * The "lock" threads will test-n-set the lock field,
+ * while the reader threads will just read the other fields
+ * in the struct.
+ */
+extern void *read_write_func(void *parm) {
+
+   int tix = ((struct thread_data *)parm)->tix;
+   uint64_t start, stop, j;    
+   char *thd_name = ((struct thread_data *)parm)->name;
+
+   // Pin each thread to a numa node.
+   setAffinity(parm);
+
+   // Wait for all threads to get created before starting.
+   while(wait_to_begin) ;
+
+   start = rdtsc();
+   for(j=0; j<LOOP_CNT; j++) {
+
+      // Check for lock thread.
+      if (*thd_name == *lock_thd_name) {
+          __sync_lock_test_and_set(&buf1.lock0, 1 );
+          buf1.lock0 += 1;   
+          buf2.lock1 = 1;   
+ 
+      } else {
+         // Reader threads.
+   
+         switch(tix % max_node_num) {
+            volatile long var;
+            case 0:
+              var = *(volatile uint64_t *)&buf1.reader1;
+              var = *(volatile uint64_t *)&buf2.reader1;
+              break;
+            case 1:
+              var = *(volatile uint64_t *)&buf1.reader2;
+              var = *(volatile uint64_t *)&buf2.reader2;
+              break;
+            case 2:
+              var = *(volatile uint64_t *)&buf1.reader3;
+              var = *(volatile uint64_t *)&buf2.reader3;
+              break;
+            case 3:
+              var = *(volatile uint64_t *)&buf1.reader4;
+              var = *(volatile uint64_t *)&buf2.reader4;
+              break;
+         }; 
+     }; 
+  }  // End of for LOOP_CNT loop
+
+  // Print out stats
+  //
+  stop = rdtsc();
+  int cpu = sched_getcpu();
+  int node = numa_node_of_cpu(cpu);
+  printf("%ld mticks, %s (thread %d), on node %d (cpu %d).\n", (stop-start)/1000000, thd_name, tix, node, cpu);  
+
+  return NULL;
+}
+ 
+int main ( int argc, char *argv[] )
+{
+  int     i, n, rc=0;
+
+  if ( argc != 2 ) /* argc should be 2 for correct execution */
+  {
+   printf( "usage: %s <n>\n", argv[0] );
+   printf( "where \"n\" is the number of threads per node\n");
+   exit(1);
+  }
+
+  int thread_cnt = atoi(argv[1]);
+
+  max_node_num = numa_max_node();
+  int node_cnt = max_node_num + 1;
+
+  // Use "thread_cnt" threads per node.
+  num_threads = (max_node_num +1) * thread_cnt;
+
+  thread = malloc( sizeof(struct thread_data) * num_threads);
+ 
+  // Create the first half of threads as lock threads.
+  // Assign each thread a successive round robin node to 
+  // be pinned to (later after it gets created.)
+  //
+  for (i=0; i<=(num_threads/2 - 1); i++) {
+     thread[i].tix = i;
+     thread[i].node = i%node_cnt;
+     thread[i].name = lock_thd_name;
+     rc = pthread_create(&thread[i].tid, NULL, read_write_func, &thread[i]);
+     checkResults("pthread_create()\n", rc);
+     usleep(500);
+  }
+
+  // Create the second half of threads as reader threads.
+  // Assign each thread a successive round robin node to 
+  // be pinned to (later after it gets created.)
+  //
+  for (i=((num_threads/2)); i<(num_threads); i++) {
+     thread[i].tix = i;
+     thread[i].node = i%node_cnt;
+     thread[i].name = reader_thd_name;
+     rc = pthread_create(&thread[i].tid, NULL, read_write_func, &thread[i]);
+     checkResults("pthread_create()\n", rc);
+     usleep(500);
+  }
+
+  // Sync to let threads start together
+  usleep(500);
+  wait_to_begin = 0;
+ 
+  for (i=0; i <num_threads; i++) {
+     rc = pthread_join(thread[i].tid, NULL);
+     checkResults("pthread_join()\n", rc);
+  }
+
+  return 0;
+}
