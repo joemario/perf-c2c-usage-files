@@ -1,0 +1,125 @@
+=================================================
+            Trace Event Information              
+=================================================
+  Total records                     :     329219
+  Locked Load/Store Operations      :      14654
+  Load Operations                   :      69679
+  Loads - uncacheable               :          0
+  Loads - IO                        :          0
+  Loads - Miss                      :       3972
+  Loads - no mapping                :          0
+  Load Fill Buffer Hit              :      11958
+  Load L1D hit                      :      17235
+  Load L2D hit                      :         21
+  Load LLC hit                      :      14219
+  Load Local HITM                   :       3402
+  Load Remote HITM                  :      12757
+  Load Remote HIT                   :       5295
+  Load Local DRAM                   :        976
+  Load Remote DRAM                  :       3246
+  Load MESI State Exclusive         :       4222
+  Load MESI State Shared            :          0
+  Load LLC Misses                   :      22274
+  LLC Misses to Local DRAM          :        4.4%
+  LLC Misses to Remote DRAM         :       14.6%
+  LLC Misses to Remote cache (HIT)  :       23.8%
+  LLC Misses to Remote cache (HITM) :       57.3%
+  Store Operations                  :     259539
+  Store - uncacheable               :          0
+  Store - no mapping                :         11
+  Store L1D Hit                     :     256696
+  Store L1D Miss                    :       2832
+  No Page Map Rejects               :       2376
+  Unable to parse data source       :          1
+
+=================================================
+    Global Shared Cache Line Event Information   
+=================================================
+  Total Shared Cache Lines          :         55
+  Load HITs on shared lines         :      55454
+  Fill Buffer Hits on shared lines  :      10635
+  L1D hits on shared lines          :      16415
+  L2D hits on shared lines          :          0
+  LLC hits on shared lines          :       8501
+  Locked Access on shared lines     :      14351
+  Store HITs on shared lines        :     109953
+  Store L1D hits on shared lines    :     109449
+  Total Merged records              :     126112
+
+=================================================
+                 c2c details                     
+=================================================
+  Events                            : cpu/mem-loads,ldlat=30/P
+                                    : cpu/mem-stores/P
+  Cachelines sort on                : Remote HITMs
+  Cacheline data groupping          : offset,pid,iaddr
+
+=================================================
+           Shared Data Cache Line Table          
+=================================================
+#
+#                              Total      Rmt  ----- LLC Load Hitm -----  ---- Store Reference ----  --- Load Dram ----      LLC    Total  ----- Core Load Hit -----  -- LLC Load Hit --
+# Index           Cacheline  records     Hitm    Total      Lcl      Rmt    Total    L1Hit   L1Miss       Lcl       Rmt  Ld Miss    Loads       FB       L1       L2       Llc       Rmt
+# .....  ..................  .......  .......  .......  .......  .......  .......  .......  .......  ........  ........  .......  .......  .......  .......  .......  ........  ........
+#
+      0            0x602180   149904   77.09%    12103     2269     9834   109504   109036      468       727      2657    13747    40400     5355    16154        0      2875       529
+      1            0x602100    12128   22.20%     3951     1119     2832        0        0        0        65       200     3749    12128     5096      108        0      2056       652
+      2  0xffff883ffb6a7e80      260    0.09%       15        3       12      161      161        0         1         1       15       99       25       50        0         6         1
+      3  0xffffffff81aec000      157    0.07%        9        0        9        1        0        1         0         7       20      156       50       59        0        27         4
+      4  0xffffffff81e3f540      179    0.06%        9        1        8      117       97       20         0        10       25       62       11        1        0        24         7
+
+=================================================
+      Shared Cache Line Distribution Pareto      
+=================================================
+#
+#        ----- HITM -----  -- Store Refs --        Data address                               ---------- cycles ----------       cpu                                     Shared                                   
+#   Num      Rmt      Lcl   L1 Hit  L1 Miss              Offset      Pid        Code address  rmt hitm  lcl hitm      load       cnt               Symbol                Object                  Source:Line  Node{cpu list}
+# .....  .......  .......  .......  .......  ..................  .......  ..................  ........  ........  ........  ........  ...................  ....................  ...........................  ....
+#
+  -------------------------------------------------------------
+      0     9834     2269   109036      468            0x602180
+  -------------------------------------------------------------
+          65.51%   55.88%   75.20%    0.00%                 0x0    14604            0x400b4f     27161     26039     26017         9  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:144   0{0-1,4}  1{24-25,120}  2{48,54}  3{169}
+           0.41%    0.35%    0.00%    0.00%                 0x0    14604            0x400b56     18088     12601     26671         9  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:145   0{0-1,4}  1{24-25,120}  2{48,54}  3{169}
+           0.00%    0.00%   24.80%  100.00%                 0x0    14604            0x400b61         0         0         0         9  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:145   0{0-1,4}  1{24-25,120}  2{48,54}  3{169}
+           7.50%    9.92%    0.00%    0.00%                0x20    14604            0x400ba7      2470      1729      1897         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:154   1{122}  2{144}
+          17.61%   20.89%    0.00%    0.00%                0x28    14604            0x400bc1      2294      1575      1649         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:158   2{53}  3{170}
+           8.97%   12.96%    0.00%    0.00%                0x30    14604            0x400bdb      2325      1897      1828         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:162   0{96}  3{171}
+
+  -------------------------------------------------------------
+      1     2832     1119        0        0            0x602100
+  -------------------------------------------------------------
+          29.13%   36.19%    0.00%    0.00%                0x20    14604            0x400bb3      1964      1230      1788         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:155   1{122}  2{144}
+          43.68%   34.41%    0.00%    0.00%                0x28    14604            0x400bcd      2274      1566      1793         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:159   2{53}  3{170}
+          27.19%   29.40%    0.00%    0.00%                0x30    14604            0x400be7      2045      1247      2011         2  [.] read_write_func  no_false_sharing.exe  false_sharing_example.c:163   0{96}  3{171}
+
+  -------------------------------------------------------------
+      2       12        3      161        0  0xffff883ffb6a7e80
+  -------------------------------------------------------------
+          58.33%  100.00%    0.00%    0.00%                 0x0    14604  0xffffffff810cf16d      1380       941      1229         9  [k] task_tick_fair              [kernel.kallsyms]  atomic64_64.h:21   0{0,4,96}  1{25,120,122}  2{53}  3{170-171}
+          16.67%    0.00%   98.76%    0.00%                 0x0    14604  0xffffffff810c9379      1794         0       625        13  [k] update_cfs_rq_blocked_load  [kernel.kallsyms]  atomic64_64.h:45   0{1,4,96}  1{25,120,122}  2{48,53-54,144}  3{169-171}
+          16.67%    0.00%    0.00%    0.00%                 0x0    14604  0xffffffff810ce098      1382         0       867        12  [k] update_cfs_shares           [kernel.kallsyms]  atomic64_64.h:21   0{1,4,96}  1{25,120,122}  2{53-54,144}  3{169-171}
+           8.33%    0.00%    0.00%    0.00%                 0x8    14604  0xffffffff810cf18c      2560         0       679         8  [k] task_tick_fair              [kernel.kallsyms]  atomic.h:26        0{4,96}  1{24-25,120,122}  2{54}  3{170}
+           0.00%    0.00%    1.24%    0.00%                 0x8    14604  0xffffffff810cf14f         0         0         0         2  [k] task_tick_fair              [kernel.kallsyms]  atomic.h:50        2{48,53}
+
+  -------------------------------------------------------------
+      3        9        0        0        1  0xffffffff81aec000
+  -------------------------------------------------------------
+          77.78%    0.00%    0.00%    0.00%                 0x0    14604  0xffffffff810c331f       430         0       234        12  [k] scheduler_tick            [kernel.kallsyms]  core.c:3055          0{1,4,96}  1{25,120,122}  2{53-54,144}  3{169-171}
+          22.22%    0.00%    0.00%    0.00%                 0x0    14604  0xffffffff810d3126       332         0       103        11  [k] trigger_load_balance      [kernel.kallsyms]  fair.c:7222          0{1,4,96}  1{25,120,122}  2{53-54,144}  3{170-171}
+           0.00%    0.00%    0.00%  100.00%                 0x0    14604  0xffffffff810eb556         0         0         0         1  [k] do_timer                  [kernel.kallsyms]  timekeeping.c:1875   3{169}
+
+  -------------------------------------------------------------
+      4        8        1       97       20  0xffffffff81e3f540
+  -------------------------------------------------------------
+          12.50%    0.00%    0.00%    0.00%                 0x0    14604  0xffffffff810eb0b0       429         0         0         1  [k] update_wall_time            [kernel.kallsyms]  timekeeping.c:1719   3{169}
+           0.00%    0.00%    4.12%   10.00%                 0x8    14604  0xffffffff810eb1f3         0         0         0         1  [k] update_wall_time            [kernel.kallsyms]  timekeeping.c:1605   3{169}
+           0.00%    0.00%    5.15%    0.00%                 0x8    14604  0xffffffff810eb27d         0         0         0         1  [k] update_wall_time            [kernel.kallsyms]  timekeeping.c:1436   3{169}
+           0.00%    0.00%    4.12%    0.00%                0x18    14604  0xffffffff810eaf96         0         0         0         1  [k] update_wall_time            [kernel.kallsyms]  timekeeping.c:1456   3{169}
+           0.00%    0.00%    1.03%    0.00%                0x20    14604  0xffffffff810eaffa         0         0         0         1  [k] update_wall_time            [kernel.kallsyms]  timekeeping.c:1489   3{169}
+          50.00%  100.00%    0.00%    0.00%                0x38    14604  0xffffffff810ea2e1       442       218       526        10  [k] ktime_get                   [kernel.kallsyms]  seqlock.h:77         0{4,96}  1{120,122}  2{53-54,144}  3{169-171}
+          37.50%    0.00%    0.00%    0.00%                0x38    14604  0xffffffff810eb593       593         0       184        10  [k] ktime_get_update_offsets_n  [kernel.kallsyms]  seqlock.h:77         0{4,96}  1{25,120,122}  2{53-54,144}  3{170-171}
+           0.00%    0.00%   11.34%    0.00%                0x38    14604  0xffffffff810eb088         0         0       627         3  [k] update_wall_time            [kernel.kallsyms]  seqlock.h:180        0{1}  2{54}  3{169}
+           0.00%    0.00%   26.80%   90.00%                0x38    14604  0xffffffff810eb0c6         0         0       120         1  [k] update_wall_time            [kernel.kallsyms]  seqlock.h:187        3{169}
+           0.00%    0.00%    1.03%    0.00%                0x3c    14604  0xffffffff8168ab02         0         0         0         1  [k] _raw_spin_unlock_irqrestor  [kernel.kallsyms]  spinlock.h:160       3{169}
+           0.00%    0.00%   46.39%    0.00%                0x3c    14604  0xffffffff8168acff         0         0      1942         3  [k] _raw_spin_lock_irqsave      [kernel.kallsyms]  spinlock.h:86        0{1}  1{120}  3{169}
