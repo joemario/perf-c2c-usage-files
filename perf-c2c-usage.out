@@ -1,0 +1,36 @@
+The flags for "perf c2c record" are:
+
+ Usage: perf c2c record [<options>] [<command>]
+    or: perf c2c record [<options>] -- <command> [<options>]
+
+    -e, --event <event>   event selector. Use 'perf mem record -e list' to list available events
+    -k, --all-kernel      collect only kernel level data
+    -l, --ldlat <n>       setup mem-loads latency
+    -u, --all-user        collect only user level data
+    -v, --verbose         be more verbose (show counter open errors, etc)
+
+The flags for "perf c2c report" are:
+
+    -c, --coalesce <coalesce fields>
+                          coalesce fields: pid,tid,iaddr,dso
+    -d, --display ...     lcl,rmt
+    -g, --call-graph <print_type,threshold[,print_limit],order,sort_key[,branch],value>
+                          Display call graph (stack chain/backtrace):
+
+                                print_type:     call graph printing style (graph|flat|fractal|folded|none)
+                                threshold:      minimum call graph inclusion threshold (<percent>)
+                                print_limit:    maximum number of call graph entry (<number>)
+                                order:          call graph order (caller|callee)
+                                sort_key:       call graph sort key (function|address)
+                                branch:         include last branch info to call graph (branch)
+                                value:          call graph value (percent|period|count)
+
+                                Default: graph,0.5,caller,function,percent
+    -i, --input <file>    the input file to process
+    -k, --vmlinux <file>  vmlinux pathname
+    -N, --node-info       show extra node info in report (repeat for more info)
+    -v, --verbose         be more verbose (show counter open errors, etc)
+        --full-symbols    Display full lenght of symbols
+        --stats           Use the stdio interface
+        --stdio           Use the stdio interface
+
