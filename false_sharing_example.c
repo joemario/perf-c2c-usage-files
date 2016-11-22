@@ -3,8 +3,8 @@
  * numa nodes.  
  *
  * It can be compiled two ways:
- *    gcc -g false_sharing_example.c -pthread -lnuma -DNO_FALSE_SHARING -o false_sharing.exe
- *    gcc -g false_sharing_example.c -pthread -lnuma -o no_false_sharing.exe
+ *    gcc -g false_sharing_example.c -pthread -lnuma -o false_sharing.exe
+ *    gcc -g false_sharing_example.c -pthread -lnuma -DNO_FALSE_SHARING -o no_false_sharing.exe
  *
  * The -DNO_FALSE_SHARING macro reduces the false sharing by expanding the shared data
  * structure into two different cachelines, (and it runs faster).
