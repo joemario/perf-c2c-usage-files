@@ -49,6 +49,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
+#include <numa.h>
 #include <sys/types.h>
 
 /*
@@ -191,9 +192,17 @@ int main ( int argc, char *argv[] )
    exit(1);
   }
 
+  if ( numa_available() < 0 )
+  {
+   printf( "NUMA not available\n" );
+   exit(1);
+  }
+
   int thread_cnt = atoi(argv[1]);
 
   max_node_num = numa_max_node();
+  if ( max_node_num == 0 )
+    max_node_num = 1;
   int node_cnt = max_node_num + 1;
 
   // Use "thread_cnt" threads per node.
